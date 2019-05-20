@@ -7,6 +7,14 @@ Version: 0.1
 */
 ?>
 <?php
+//Our class extends the WP_List_Table class, so we need to make sure that it's there
+if(!class_exists('WP_List_Table')){
+    require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+}
+
+$file = ABSPATH."wp-content/plugins/WP-Portfolio/admin_table.php";
+require( $file );
+
 register_activation_hook( __FILE__, 'portfolio_dbtable_install' );
 add_action('admin_menu', 'portfolio_menu');
 add_shortcode('projects', 'display_projects');
@@ -51,7 +59,6 @@ function portfolio_menu() {
 }
 
 function init_page(){
-    imageUpload();
     ?>
     <div class="wrap">
         <h2>Create new project</h2>
@@ -85,13 +92,19 @@ function init_page(){
         </form>
     </div>
     <?php
-    if (isset($_POST['Submit'])){
+    if (isset($_POST['Submit'])) {
         $name = $_POST["project-name"];
         $url = $_POST["project-url"];
         $description = $_POST["project-description"];
         $imageName = $_FILES["project-image"]['name'];
+        imageUpload();
         portfolio_dbtable_populate($name, $url, $description, $imageName);
     }
+
+    $wp_list_table = new Projects_List();
+    $wp_list_table->prepare_items();
+    $wp_list_table->display();
+
 }
 
 function portfolio_dbtable_populate($name, $url, $description, $imageName){
@@ -104,13 +117,16 @@ function portfolio_dbtable_populate($name, $url, $description, $imageName){
 
 function imageUpload(){
     if(isset($_FILES['project-image'])){
-        $jpg = $_FILES['project-image'];
-        $uploaded=media_handle_upload('project-image', 0);
+        $uploaded = media_handle_upload('project-image', 0);
 
         if(is_wp_error($uploaded)){
             echo "Error uploading file: " . $uploaded->get_error_message();
         }else{
             echo "File upload successful!";
+        }
+
+        if (file_exists($uploaded)) {
+            echo "The file $uploaded exists";
         }
     }
 }
@@ -119,17 +135,24 @@ function display_projects(){
     $now = new DateTime('now');
     $month = $now->format('m');
     $year = $now->format('Y');
+
     return '
     <div class="projects">
         <div class="block">
             <div class="thumbnail">
-                <img src="wp-content/uploads/'  . $year . '/' . $month . '/' . get_option('project-image') . '" />
+                <img src="wp-content/uploads/'  . $year . '/' . $month . '/' . $imageName . '" />
             </div>
-            <div class="name">'.get_option('project-name').'</div>
+            <div class="name">'. $name .'</div>
             <div class="url">
-                <a href="'. get_option('project-url').'">'.get_option('project-url').'</a>
+                <a href="'. get_option('project-url').'">'. $url .'</a>
             </div>
-            <div class="description">'.get_option('project-description').'</div>
+            <div class="description">'. $description .'</div>
         </div>
     </div>';
 }
+
+function remove_image_sizes( $sizes, $metadata ) {
+    return [];
+}
+add_filter( 'intermediate_image_sizes_advanced', 'remove_image_sizes', 10, 2 );
+
