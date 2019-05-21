@@ -45,7 +45,7 @@ function portfolio_dbtable_install() {
 	  	name tinytext NOT NULL,
 	  	url varchar(55) DEFAULT '' NOT NULL,
         description text NOT NULL,
-        image text NOT NULL,
+        image varchar(50),
 	  	PRIMARY KEY  (id)
 	) $charset_collate;";
 
@@ -71,7 +71,7 @@ function init_page(){
         <h2>Create new project</h2>
         <form method="post" <?php echo esc_url( admin_url( 'admin-post.php' ) ); ?> enctype="multipart/form-data">
             <p><strong>Name:</strong><br />
-                <input type="text" name="project-name" size="45" placeholder="Please enter the name of your project"/>
+                <input required type="text" name="project-name" size="45" placeholder="Please enter the name of your project"/>
             </p>
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="page_options" value="project-name" />
@@ -88,8 +88,8 @@ function init_page(){
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="page_options" value="project-description" />
 
-            <p><strong>Thumbnail (png/jpeg):</strong><br />
-            <input type='file' id="project-image" name="project-image" accept="image/png, image/jpeg">
+            <p><strong>Thumbnail (png/jpeg/jpg):</strong><br />
+            <input type='file' id="project-image" name="project-image" accept="image/png, , image/jpg">
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="page_options" value="project-image" />
 
@@ -110,8 +110,14 @@ function init_page(){
 
     $wp_list_table = new Projects_List();
     echo '<div class="wrap"><h2>Existing projects</h2>';
-    $wp_list_table->prepare_items();
-    $wp_list_table->display();
+        echo '<form id="existing-projects" method="post">';
+            $page  = filter_input( INPUT_GET, 'page', FILTER_SANITIZE_STRIPPED );
+            $paged = filter_input( INPUT_GET, 'paged', FILTER_SANITIZE_NUMBER_INT );
+            printf( '<input type="hidden" name="page" value="%s" />', $page );
+            printf( '<input type="hidden" name="paged" value="%d" />', $paged );
+            $wp_list_table->prepare_items(); // this will prepare the items AND process the bulk actions
+            $wp_list_table->display();
+        echo '</form>';
     echo '</div>';
 }
 
@@ -128,13 +134,9 @@ function imageUpload(){
         $uploaded = media_handle_upload('project-image', 0);
 
         if(is_wp_error($uploaded)){
-            echo "Error uploading file: " . $uploaded->get_error_message();
+//            echo "Error uploading file: " . $uploaded->get_error_message();
         }else{
             echo "File upload successful!";
-        }
-
-        if (file_exists($uploaded)) {
-            echo "The file $uploaded exists";
         }
     }
 }

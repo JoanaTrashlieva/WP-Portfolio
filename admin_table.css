@@ -5,3 +5,7 @@ th#id.manage-column.column-id.column-primary{
 th#edit.manage-column.column-edit {
     width: 100px;
 }
+
+.widefat td{
+    vertical-align: inherit;
+}
