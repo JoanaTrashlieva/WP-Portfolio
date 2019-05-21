@@ -15,6 +15,13 @@ if(!class_exists('WP_List_Table')){
 $file = ABSPATH."wp-content/plugins/WP-Portfolio/admin_table.php";
 require( $file );
 
+function admin_register_head() {
+    $siteurl = get_option('siteurl');
+    $url = $siteurl . '/wp-content/plugins/' . basename(dirname(__FILE__)) . '/admin_table.css';
+    echo "<link rel='stylesheet' type='text/css' href='$url' />\n";
+}
+add_action('admin_head', 'admin_register_head');
+
 register_activation_hook( __FILE__, 'portfolio_dbtable_install' );
 add_action('admin_menu', 'portfolio_menu');
 add_shortcode('projects', 'display_projects');
@@ -102,9 +109,10 @@ function init_page(){
     }
 
     $wp_list_table = new Projects_List();
+    echo '<div class="wrap"><h2>Existing projects</h2>';
     $wp_list_table->prepare_items();
     $wp_list_table->display();
-
+    echo '</div>';
 }
 
 function portfolio_dbtable_populate($name, $url, $description, $imageName){

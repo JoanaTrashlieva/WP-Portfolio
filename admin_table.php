@@ -1,6 +1,5 @@
 <?php
-class Projects_List extends WP_List_Table
-{
+class Projects_List extends WP_List_Table{
 
     function __construct()
     {
@@ -13,78 +12,136 @@ class Projects_List extends WP_List_Table
 
     function get_columns() {
         $columns= array(
-            'cb' => ('id'),
-            'id' => ('Id'),
+            'cb'  => '<input type="checkbox" />',
+            'id' => __('Id'),
             'image'=>__('Image'),
             'name'=>__('Name'),
             'url'=>__('URL'),
-            'description'=>__('Description')
+            'description'=>__('Description'),
+            'edit' => __('Edit')
         );
         return $columns;
     }
 
-    function prepare_items() {
-        $columns = $this->get_columns();
+    function column_default( $item, $column_name ) {
+        $now = new DateTime('now');
+        $month = $now->format('m');
+        $year = $now->format('Y');
 
-
-        global $wpdb, $_wp_column_headers;
-        $screen = get_current_screen();
-
-        $query = "SELECT * FROM " .$wpdb->prefix . "portfolio_projects";
-
-        $orderby = !empty($_GET["orderby"]) ? mysql_real_escape_string($_GET["orderby"]) : 'ASC';
-        $order = !empty($_GET["order"]) ? mysql_real_escape_string($_GET["order"]) : '';
-
-        if (!empty($orderby) & !empty($order)) {
-            $query .= ' ORDER BY ' . $orderby . ' ' . $order;
+        switch( $column_name ) {
+            case 'image':
+                $imagePath = 'wp-content/uploads/'  . $year . '/' . $month . '/' . $item[ $column_name ];
+                return $imagePath;
+            case 'id':
+            case 'name':
+            case 'url':
+            case 'description':
+                return $item[ $column_name ];
+            case 'edit':
+                $editlink  = '/wp-admin/link.php?action=edit&link_id=' . $item["id"];
+                return '<a href="'.$editlink.'">Edit</a>';
+            default:
+                return print_r( $item, true );
         }
+    }
 
-        $totalitems = $wpdb->query($query); //return the total number of affected rows
-
-        $perpage = 5;
-
-        $paged = !empty($_GET["paged"]) ? mysql_real_escape_string($_GET["paged"]) : '';
-
-        if (empty($paged) || !is_numeric($paged) || $paged <= 0) {
-            $paged = 1;
-        }
-
-        //How many pages do we have in total?
-        $totalpages = ceil($totalitems / $perpage);
-
-        //adjust the query to take pagination into account
-        if (!empty($paged) && !empty($perpage)) {
-            $offset = ($paged - 1) * $perpage;
-            $query .= ' LIMIT ' . (int)$offset . ',' . (int)$perpage;
-        }
-
-        /* -- Register the pagination -- */
-        $this->set_pagination_args(array(
-            "total_items" => $totalitems,
-            "total_pages" => $totalpages,
-            "per_page" => $perpage,
-        ));
-
+    function get_projects($per_page = 5, $page_number = 1) {
         $columns = $this->get_columns();
         $hidden = array();
         $sortable = array();
         $this->_column_headers = array($columns, $hidden, $sortable);
-        $_wp_column_headers[$screen->id] = $columns;
-        $this->items = $wpdb->get_results($query);
+
+        global $wpdb;
+        $sql = "SELECT * FROM {$wpdb->prefix}portfolio_projects";
+        $records = $wpdb->get_results($sql);
+
+
+        if ( ! empty( $_REQUEST['orderby'] ) ) {
+            $sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
+            $sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' ASC';
+        }
+
+        $sql .= " LIMIT $per_page";
+        $sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
+        $result = $wpdb->get_results( $sql, 'ARRAY_A' );
+
+        return $result;
     }
 
-//    function column_default( $item, $column_name ) {
-//        switch( $column_name ) {
-//            case 'id':
-//            case 'image':
-//            case 'name':
-//            case 'url':
-//            case 'description':
-//                return $item[ $column_name ];
-//            default:
-//                return print_r( $item, true ) ; //Show the whole array for troubleshooting purposes
-//        }
-//    }
+    function prepare_items(){
+        $this->_column_headers = $this->get_column_info();
+
+        $this->process_bulk_action();
+
+        $per_page     = $this->get_items_per_page( 'projects_per_page', 5 );
+        $current_page = $this->get_pagenum();
+        $total_items  = self::record_count();
+
+        $this->set_pagination_args( [
+            'total_items' => $total_items,
+            'per_page'    => $per_page
+        ] );
+
+
+        $this->items = self::get_projects( $per_page, $current_page );
+    }
+
+    public static function record_count() {
+        global $wpdb;
+
+        $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}portfolio_projects";
+
+        return $wpdb->get_var( $sql );
+    }
+
+    public static function delete_project( $id ) {
+        global $wpdb;
+
+        $wpdb->delete(
+            "{$wpdb->prefix}portfolio_projects",
+            [ 'ID' => $id ],
+            [ '%d' ]
+        );
+    }
+
+    public function get_bulk_actions() {
+        $actions = [
+            'bulk-delete' => 'Delete'
+        ];
+
+        return $actions;
+    }
+
+    public function process_bulk_action() {
+        if ( 'delete' === $this->current_action() ) {
+
+            $nonce = esc_attr( $_REQUEST['_wpnonce'] );
+
+            if ( ! wp_verify_nonce( $nonce, 'sp_delete_project' ) ) {
+                die( 'Go get a life script kiddies' );
+            }
+            else {
+                self::delete_project( absint( $_GET['project'] ) );
+
+                wp_redirect( esc_url( add_query_arg() ) );
+                exit;
+            }
+
+        }
+
+        if ( ( isset( $_POST['action'] ) && $_POST['action'] == 'bulk-delete' )
+            || ( isset( $_POST['action2'] ) && $_POST['action2'] == 'bulk-delete' )
+        ) {
+
+            $delete_ids = esc_sql( $_POST['bulk-delete'] );
+            foreach ( $delete_ids as $id ) {
+                self::delete_project( $id );
+
+            }
+            wp_redirect( esc_url( add_query_arg() ) );
+            exit;
+        }
+    }
 
     public function get_sortable_columns() {
         return $sortable = array(
@@ -96,111 +153,9 @@ class Projects_List extends WP_List_Table
         );
     }
 
-    public static function get_projects($per_page = 5, $page_number = 1)
-    {
-
-        global $wpdb;
-
-        $sql = "SELECT * FROM {$wpdb->prefix}portfolio_projects";
-
-        if (!empty($_REQUEST['orderby'])) {
-            $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
-            $sql .= !empty($_REQUEST['order']) ? ' ' . esc_sql($_REQUEST['order']) : ' ASC';
-        }
-
-        $sql .= " LIMIT $per_page";
-
-        $sql .= ' OFFSET ' . ($page_number - 1) * $per_page;
-
-
-        $result = $wpdb->get_results($sql, 'ARRAY_A');
-
-        return $result;
-    }
-
-    public static function delete_project($id)
-    {
-        global $wpdb;
-
-        $wpdb->delete(
-            "{$wpdb->prefix}portfolio_projects",
-            ['id' => $id],
-            ['%d']
+    function column_cb( $item ){
+        return sprintf(
+            '<input type="checkbox" name="bulk-delete[]" value="%s"/>', $item['id']
         );
     }
-
-    public static function record_count()
-    {
-        global $wpdb;
-
-        $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}portfolio_projects";
-
-        return $wpdb->get_var($sql);
-    }
-
-    public function no_items() {
-        _e( 'No projects avaliable.', 'sp' );
-    }
-
-//    function column_name( $item ) {
-//
-//        // create a nonce
-//        $delete_nonce = wp_create_nonce( 'sp_delete_project' );
-//
-//        $title = '<strong>' . $item['name'] . '</strong>';
-//
-//        $actions = [
-//            'delete' => sprintf( '<a href="?page=%s&action=%s&customer=%s&_wpnonce=%s">Delete</a>', esc_attr( $_REQUEST['page'] ), 'delete', absint( $item['id'] ), $delete_nonce )
-//        ];
-//
-//        return $title . $this->row_actions( $actions );
-//    }
-//
-//    function column_cb( $item ) {
-//        return sprintf(
-//            '<input type="checkbox" name="bulk-delete[]" value="%s" />', $item['ID']
-//        );
-//    }
-
-    /**
-     * Display the rows of records in the table
-     * @return string, echo the markup of the rows
-     */
-//    function display_rows() {
-//        $records = $this->items;
-//        if(!empty($records)){foreach($records as $rec){
-//
-//            $editlink  = '/wp-admin/link.php?action=edit&link_id='.(int)$rec->id;
-//            echo '<tr id="record_' .$rec->id. '" style="max-width: 1024px;">';
-//
-//            echo '<td>'.stripslashes($rec->id).'</td>';
-//            echo '<td>'.stripslashes($rec->name).'</td>';
-//            echo '<td>'.stripslashes($rec->url).'</td>';
-//            echo '<td>'.$rec->description.'</td>';
-//            echo '<td><a href="'.$editlink.'">Edit</a></td>';
-//
-//            echo'</tr>';
-//        }}
-//    }
-
-//    public static function get_projects( $per_page = 5, $page_number = 1 ) {
-//
-//        global $wpdb;
-//
-//        $sql = "SELECT * FROM {$wpdb->prefix}portfolio_projects";
-//
-//        if ( ! empty( $_REQUEST['orderby'] ) ) {
-//            $sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
-//            $sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' ASC';
-//        }
-//
-//        $sql .= " LIMIT $per_page";
-//
-//        $sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
-//
-//
-//        $result = $wpdb->get_results( $sql, 'ARRAY_A' );
-//
-//        return $result;
-//    }
 }
