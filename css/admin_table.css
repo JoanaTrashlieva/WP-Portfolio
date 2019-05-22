@@ -9,3 +9,7 @@ th#edit.manage-column.column-edit {
 .widefat td{
     vertical-align: inherit;
 }
+
+.quick-edit {
+    display: none;
+}

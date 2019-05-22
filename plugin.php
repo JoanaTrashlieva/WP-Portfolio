@@ -5,27 +5,30 @@ Description: Simple wordpress plugin to display portfolio projects on your site'
 Author: Joana Trashlieva
 Version: 0.1
 */
-?>
-<?php
-//Our class extends the WP_List_Table class, so we need to make sure that it's there
+
+add_action('admin_head', 'admin_register_head');
+add_action('admin_menu', 'portfolio_menu');
+register_activation_hook( __FILE__, 'portfolio_dbtable_install' );
+add_shortcode('projects', 'display_projects');
+add_filter( 'intermediate_image_sizes_advanced', 'remove_image_sizes', 10, 2 );
+
 if(!class_exists('WP_List_Table')){
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
-
 $file = ABSPATH."wp-content/plugins/WP-Portfolio/admin_table.php";
-require( $file );
+require($file);
 
+//CSS, JS
 function admin_register_head() {
     $siteurl = get_option('siteurl');
-    $url = $siteurl . '/wp-content/plugins/' . basename(dirname(__FILE__)) . '/admin_table.css';
-    echo "<link rel='stylesheet' type='text/css' href='$url' />\n";
+    $url = $siteurl . '/wp-content/plugins/' . basename(dirname(__FILE__));
+    $css = '/css/admin_table.css';
+    $js = '/js/quick_edit.js';
+    echo "<script type='text/javascript' src='$url$js'></script>";
+    echo "<link rel='stylesheet' type='text/css' href='$url$css'/>";
 }
-add_action('admin_head', 'admin_register_head');
 
-register_activation_hook( __FILE__, 'portfolio_dbtable_install' );
-add_action('admin_menu', 'portfolio_menu');
-add_shortcode('projects', 'display_projects');
-
+//Db connection
 function portfolio_dbtable_install() {
 
     //variable for a dynamic table prefix - e.g. if plugin is moved to another installation
@@ -53,6 +56,7 @@ function portfolio_dbtable_install() {
     dbDelta( $sql );
 }
 
+//Admin menu
 function portfolio_menu() {
     $page_title = 'JT Portfolio Plugin Page';
     $menu_title = 'Portfolio';
@@ -61,10 +65,10 @@ function portfolio_menu() {
     $function = 'init_page';
     $icon_url = '';
     $position = 100;
-
     add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
 }
 
+//Admin form
 function init_page(){
     ?>
     <div class="wrap">
@@ -115,17 +119,16 @@ function init_page(){
             $paged = filter_input( INPUT_GET, 'paged', FILTER_SANITIZE_NUMBER_INT );
             printf( '<input type="hidden" name="page" value="%s" />', $page );
             printf( '<input type="hidden" name="paged" value="%d" />', $paged );
-            $wp_list_table->prepare_items(); // this will prepare the items AND process the bulk actions
+            $wp_list_table->prepare_items();
             $wp_list_table->display();
-        echo '</form>';
+    echo '</form>';
     echo '</div>';
 }
 
+//Send data to db table
 function portfolio_dbtable_populate($name, $url, $description, $imageName){
     global $wpdb;
-
     $table_name = $wpdb->prefix . 'portfolio_projects';
-
     $wpdb->insert($table_name, array('name' => $name, 'url' => $url, 'description' => $description, 'image' => $imageName));
 }
 
@@ -134,35 +137,33 @@ function imageUpload(){
         $uploaded = media_handle_upload('project-image', 0);
 
         if(is_wp_error($uploaded)){
-//            echo "Error uploading file: " . $uploaded->get_error_message();
+            echo "Error uploading image: " . $uploaded->get_error_message();
         }else{
             echo "File upload successful!";
         }
     }
 }
 
+//Display on frontend
 function display_projects(){
     $now = new DateTime('now');
     $month = $now->format('m');
     $year = $now->format('Y');
 
-    return '
-    <div class="projects">
-        <div class="block">
-            <div class="thumbnail">
-                <img src="wp-content/uploads/'  . $year . '/' . $month . '/' . $imageName . '" />
-            </div>
-            <div class="name">'. $name .'</div>
-            <div class="url">
-                <a href="'. get_option('project-url').'">'. $url .'</a>
-            </div>
-            <div class="description">'. $description .'</div>
-        </div>
-    </div>';
-}
 
-function remove_image_sizes( $sizes, $metadata ) {
-    return [];
+    return '
+        <div class="projects">
+            <div class="block">
+                <div class="thumbnail">
+                    <img src="wp-content/uploads/'  . $year . '/' . $month . '/' . $imageName . '" />
+                </div>
+                <div class="name">'. $name .'</div>
+                <div class="url">
+                    <a href="'. get_option('project-url').'">'. $url .'</a>
+                </div>
+                <div class="description">'. $description .'</div>
+            </div>
+        </div>
+    ';
 }
-add_filter( 'intermediate_image_sizes_advanced', 'remove_image_sizes', 10, 2 );
 

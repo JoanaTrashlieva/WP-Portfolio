@@ -25,9 +25,7 @@ class Projects_List extends WP_List_Table{
 
     //Checkbox column
     function column_cb( $item ){
-        return sprintf(
-            '<input type="checkbox" name="bulk-delete[]" value="%s"/>', $item['id']
-        );
+        return sprintf('<input type="checkbox" name="id[]" value="%s"/>', $item['id']);
     }
 
     public function get_sortable_columns() {
@@ -61,7 +59,6 @@ class Projects_List extends WP_List_Table{
         $now = new DateTime('now');
         $month = $now->format('m');
         $year = $now->format('Y');
-
         switch( $column_name ) {
             case 'image':
                 if ($item[ $column_name ] != null){
@@ -70,26 +67,18 @@ class Projects_List extends WP_List_Table{
                     return 'no image';
                 }
             case 'id':
+                return '<div id="id-edit">'.print_r( $item['id'], true ).'</div>';
+                break;
             case 'name':
             case 'url':
             case 'description':
                 return $item[ $column_name ];
             case 'edit':
-                $editlink  = '/wp-admin/link.php?action=edit&link_id=' . $item["id"];
-                return '<a href="'.$editlink.'">Edit</a>';
+                return '<a href="#" onclick="toggleQuickEdit()">Edit</a>';
+                break;
             default:
                 return print_r( $item, true );
-
-//                $actions = array(
-//                    'edit'      => sprintf('<a href="?page=%s&action=%s&movie=%s">Edit</a>',$_REQUEST['page'],'edit',$item['name']),
-//                );
-//
-//                return sprintf('%1$s <span style="color:silver"></span>%3$s',
-//                    /*$1%s*/ $item[ $column_name ],
-//                    /*$2%s*/ $item[ $column_name ],
-//                    /*$3%s*/ $this->row_actions($actions)
-//                );
-//                break;
+                break;
         }
     }
 
@@ -140,32 +129,39 @@ class Projects_List extends WP_List_Table{
             $nonce  = filter_input( INPUT_POST, '_wpnonce', FILTER_SANITIZE_STRING );
             $action = 'bulk-' . $this->_args['plural'];
 
-            if ( ! wp_verify_nonce( $nonce, $action ) )
-                wp_die( 'Security check failed!' );
-
+            if ( ! wp_verify_nonce( $nonce, $action ) ) {
+                wp_die('Security check failed!');
+            }
         }
 
         $action = $this->current_action();
 
         switch ( $action ) {
             case 'delete':
-                var_dump("Delete");
-                break;
+                global $wpdb;
+                $table_name = $wpdb->prefix . 'portfolio_projects';
 
+                if ('delete' === $this->current_action()) {
+                    $ids = isset($_REQUEST['id'])? $_REQUEST['id'] : array();
+
+                    if (is_array($ids)) {
+                        $ids = implode(',', $ids);
+                    }
+                    if (!empty($ids)) {
+                        $wpdb->query("DELETE FROM $table_name WHERE id IN($ids)");
+                    }
+                }
+                break;
             default:
-                var_dump("Default");
                 return;
                 break;
         }
         return;
     }
 
-    public static function delete_project($id) {
-        global $wpdb;
-
-        $wpdb->delete(
-            "{$wpdb->prefix}portfolio_projects",
-            [ 'id' => $id]
-        );
+    function quick_edit($posts_columns)
+    {
+        $posts_columns['generatewp_edit_time'] = __('Edit Time', 'generatewp');
+        return $posts_columns;
     }
 }
