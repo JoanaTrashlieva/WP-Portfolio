@@ -1,13 +1,11 @@
-// console.log(id);
+function toggleQuickEdit(id) {
+    //Checking which button is pressed
+    var idNumber = id.getAttribute("data-id-number");
+    var tr = id.parentElement.parentElement.nextSibling;
+    tr.classList.toggle("quick-edit");
+}
 
-function toggleQuickEdit() {
-    var row = document.getElementById("quick-edit-menu");
-    var id = document.getElementById("id-edit");
-    console.log(id);
-
-    if (x.style.display === "none") {
-        x.style.display = "block";
-    } else {
-        x.style.display = "none";
-    }
+function closeQuickEdit(elem){
+    var row = elem.parentElement;
+    row.parentElement.classList.toggle("quick-edit");
 }

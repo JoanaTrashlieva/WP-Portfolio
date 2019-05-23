@@ -55,10 +55,24 @@ class Projects_List extends WP_List_Table{
         $this->items = self::get_projects( $per_page, $current_page );
     }
 
+    function delete_single(){
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'portfolio_projects';
+        $ids = isset($_REQUEST['id'])? $_REQUEST['id'] : array();
+
+        if (is_array($ids)) {
+            $ids = implode(',', $ids);
+        }
+        if (!empty($ids)) {
+            $wpdb->query("DELETE FROM $table_name WHERE id IN($ids)");
+        }
+    }
+
     function column_default($item, $column_name ) {
         $now = new DateTime('now');
         $month = $now->format('m');
         $year = $now->format('Y');
+
         switch( $column_name ) {
             case 'image':
                 if ($item[ $column_name ] != null){
@@ -74,7 +88,61 @@ class Projects_List extends WP_List_Table{
             case 'description':
                 return $item[ $column_name ];
             case 'edit':
-                return '<a href="#" onclick="toggleQuickEdit()">Edit</a>';
+                global $wpdb;
+                $id = $item['id'];
+                $sql = "SELECT * FROM {$wpdb->prefix}portfolio_projects WHERE id=$id";
+                $info = $wpdb->get_results($sql);
+                $oldImage = $info[0]->image;
+                $oldName = $info[0]->name;
+                $oldURL = $info[0]->url;
+                $oldDescr = $info[0]->description;
+
+                if($oldImage){
+                    $imageName = $oldImage;
+                } else {
+                    $imageName = "No Image";
+                }
+
+                if (isset($_POST['Save'])) {
+                    $nameUpdated = $_POST["project-name-updated"];
+                    $urlUpdated = $_POST["project-url-updated"];
+                    $descriptionUpdated = $_POST["project-description-updated"];
+                    $imageNameUpdated = $_FILES["project-image-updated"]['name'];
+                    imageUpload();
+                    portfolio_dbtable_populate_updated($nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item);
+                }
+
+                return '<a class="test" onclick="toggleQuickEdit(this)" data-id-number='. $item['id'].'>Edit</a>
+                        <form method="post">
+                            <tr class="quick-edit" data-tr-number='. $item['id'].'>
+                            <td colspan="3" >
+                                <input type=\'file\' id="project-image-updated" name="project-image-updated" accept="image/png, , image/jpg" />
+                                <input type="hidden" name="action" value="update" />
+                                <input type="hidden" name="page_options" value="project-image-updated" />
+                                <p>Current: <i>'.$imageName.'</i></p>
+                            </td>
+                            <td><p>New name: 
+                                    <input required type="text" name="project-name-updated" size="20" value='.$oldName.'/>
+                                    <input type="hidden" name="action" value="update" />
+                                    <input type="hidden" name="page_options" value="project-name-updated" />
+                                </p></td>
+                            <td><p>New url: 
+                                    <input type="url" name="project-url-updated" size="20" value='.$oldURL.'>
+                                    <input type="hidden" name="action" value="update" />
+                                    <input type="hidden" name="page_options" value="project-url-updated" />
+                                </p></td>
+                            <td><p>New description: 
+                                    <input type="text" name="project-description-updated" size="20" value='.$oldDescr.'/>
+                                    <input type="hidden" name="action" value="update" />
+                                    <input type="hidden" name="page_options" value="project-description-updated" />
+                                </p></td>
+                            <td>
+                                <input id="save" name="Save" type="submit" value="Save">
+                                <a href="#" id="discard" onclick="closeQuickEdit(this)">Discard</a>
+                                <a href="#" id="delete" onclick="loadDoc()">Delete</a>
+                            </td>
+                            </tr>
+                        </form>';
                 break;
             default:
                 return print_r( $item, true );

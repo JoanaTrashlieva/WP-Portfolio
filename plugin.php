@@ -18,6 +18,10 @@ if(!class_exists('WP_List_Table')){
 $file = ABSPATH."wp-content/plugins/WP-Portfolio/admin_table.php";
 require($file);
 
+function remove_image_sizes( $sizes, $metadata ) {
+    return [];
+}
+
 //CSS, JS
 function admin_register_head() {
     $siteurl = get_option('siteurl');
@@ -132,6 +136,13 @@ function portfolio_dbtable_populate($name, $url, $description, $imageName){
     $wpdb->insert($table_name, array('name' => $name, 'url' => $url, 'description' => $description, 'image' => $imageName));
 }
 
+//Send updates to db table
+function portfolio_dbtable_populate_updated($nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item){
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'portfolio_projects';
+    $wpdb->update($table_name, array('name' => $nameUpdated, 'url' => $urlUpdated, 'description' => $descriptionUpdated, 'image' => $imageNameUpdated), array('id'=> $item['id']));
+}
+
 function imageUpload(){
     if(isset($_FILES['project-image'])){
         $uploaded = media_handle_upload('project-image', 0);
@@ -144,26 +155,38 @@ function imageUpload(){
     }
 }
 
-//Display on frontend
-function display_projects(){
-    $now = new DateTime('now');
-    $month = $now->format('m');
-    $year = $now->format('Y');
+function imageUploadUpdated(){
+    if(isset($_FILES['project-image-updated'])){
+        $uploaded = media_handle_upload('project-image-updated', 0);
 
-
-    return '
-        <div class="projects">
-            <div class="block">
-                <div class="thumbnail">
-                    <img src="wp-content/uploads/'  . $year . '/' . $month . '/' . $imageName . '" />
-                </div>
-                <div class="name">'. $name .'</div>
-                <div class="url">
-                    <a href="'. get_option('project-url').'">'. $url .'</a>
-                </div>
-                <div class="description">'. $description .'</div>
-            </div>
-        </div>
-    ';
+        if(is_wp_error($uploaded)){
+            echo "Error uploading image: " . $uploaded->get_error_message();
+        }else{
+            echo "File upload successful!";
+        }
+    }
 }
+
+//Display on frontend
+//function display_projects(){
+//    $now = new DateTime('now');
+//    $month = $now->format('m');
+//    $year = $now->format('Y');
+//
+//
+//    return '
+//        <div class="projects">
+//            <div class="block">
+//                <div class="thumbnail">
+//                    <img src="wp-content/uploads/'  . $year . '/' . $month . '/' . $imageName . '" />
+//                </div>
+//                <div class="name">'. $name .'</div>
+//                <div class="url">
+//                    <a href="'. get_option('project-url').'">'. $url .'</a>
+//                </div>
+//                <div class="description">'. $description .'</div>
+//            </div>
+//        </div>
+//    ';
+//}
 
