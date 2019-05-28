@@ -13,8 +13,6 @@ add_shortcode('projects', 'display_projects'); //shortcode for using the plugin
 add_filter( 'intermediate_image_sizes_advanced', 'remove_image_sizes', 10, 2 ); //stop wordpress from resizing images on upload
 add_action('wp_enqueue_scripts', 'frontend_scripts');
 
-
-
 //Link table file
 if(!class_exists('WP_List_Table')){
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
@@ -118,7 +116,6 @@ function init_page(){
             <input type='file' id="project-image" name="project-image" accept="image/png, , image/jpg">
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="page_options" value="project-image" />
-
             <p>
                 <input type="submit" name="Submit" value="Save"/>
             </p>
@@ -155,10 +152,12 @@ function portfolio_dbtable_populate($name, $url, $description, $imageName){
 }
 
 //Send updates to db table
-function portfolio_dbtable_populate_updated($nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item){
+function portfolio_dbtable_populate_updated($id, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item){
     global $wpdb;
     $table_name = $wpdb->prefix . 'portfolio_projects';
-    $wpdb->update($table_name, array('name' => $nameUpdated, 'url' => $urlUpdated, 'description' => $descriptionUpdated, 'image' => $imageNameUpdated), array('id'=> $item['id']));
+    $wpdb->update($table_name,
+        array('id' => $id,'name' => $nameUpdated, 'url' => $urlUpdated, 'description' => $descriptionUpdated, 'image' => $imageNameUpdated),
+        array('id'=> $id));
 }
 
 function imageUpload(){

@@ -28,10 +28,6 @@ class Projects_List extends WP_List_Table{
         return sprintf('<input type="checkbox" name="id[]" value="%s"/>', $item['id']);
     }
 
-    function row_actions($actions, $always_visible = true){
-        return parent::row_actions($actions, $always_visible);
-    }
-
     //Getting the data from the db table
     function prepare_items(){
         $this->_column_headers = $this->get_column_info();
@@ -47,19 +43,6 @@ class Projects_List extends WP_List_Table{
         ] );
 
         $this->items = self::get_projects( $per_page, $current_page );
-    }
-
-    function delete_single(){
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'portfolio_projects';
-        $ids = isset($_REQUEST['id'])? $_REQUEST['id'] : array();
-
-        if (is_array($ids)) {
-            $ids = implode(',', $ids);
-        }
-        if (!empty($ids)) {
-            $wpdb->query("DELETE FROM $table_name WHERE id IN($ids)");
-        }
     }
 
     function column_default($item, $column_name ) {
@@ -86,10 +69,15 @@ class Projects_List extends WP_List_Table{
                 $id = $item['id'];
                 $sql = "SELECT * FROM {$wpdb->prefix}portfolio_projects WHERE id=$id";
                 $info = $wpdb->get_results($sql);
-                $oldImage = $info[0]->image;
-                $oldName = $info[0]->name;
-                $oldURL = $info[0]->url;
-                $oldDescr = $info[0]->description;
+
+                if($info){
+                    $oldImage = $info[0]->image;
+                    $oldName = $info[0]->name;
+                    $oldURL = $info[0]->url;
+                    $oldDescr = $info[0]->description;
+                } else {
+                    return null;
+                }
 
                 if($oldImage){
                     $imageName = $oldImage;
@@ -98,16 +86,29 @@ class Projects_List extends WP_List_Table{
                 }
 
                 if (isset($_POST['Save'])) {
+                    $id = $_POST['quickAction'];
                     $nameUpdated = $_POST["project-name-updated"];
                     $urlUpdated = $_POST["project-url-updated"];
                     $descriptionUpdated = $_POST["project-description-updated"];
-                    $imageNameUpdated = $_FILES["project-image-updated"]['name'];
-                    imageUpload();
-                    portfolio_dbtable_populate_updated($nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item);
+                    $imageNameUpdated = $_POST["project-image-updated"];
+                    imageUploadUpdated();
+                    portfolio_dbtable_populate_updated($id, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item);
+                    echo "<meta http-equiv='refresh' content='0'>";
+                }
+
+                if (isset($_POST['Delete'])) {
+                    $id = $_POST['quickAction'];
+                    $wpdb->delete(
+                        "{$wpdb->prefix}portfolio_projects",
+                        ['id' => $id],
+                        ['%d']
+                    );
+                    echo "<meta http-equiv='refresh' content='0'>";
                 }
 
                 return '<a class="test" onclick="toggleQuickEdit(this)" data-id-number='. $item['id'].'>Edit</a>
                         <form method="post">
+                            <input type="hidden" value="'.$item['id'].'" name="quickAction" />
                             <tr class="quick-edit" data-tr-number='. $item['id'].'>
                                 <td colspan="3" >
                                     <input type=\'file\' id="project-image-updated" name="project-image-updated" accept="image/png, , image/jpg" />
@@ -131,9 +132,9 @@ class Projects_List extends WP_List_Table{
                                         <input type="hidden" name="page_options" value="project-description-updated" />
                                     </p></td>
                                 <td class="testing">
-                                    <input id="save" name="Save" type="submit" value="Save" /><br />
-                                    <input id="discard" type="reset" value="Discard" onclick="closeQuickEdit(this)" />
-                                    <a href="plugin.php?delete=true" id="delete">Delete</a>
+                                    <input id="save" name="Save" type="submit" value="Save" />
+                                    <input id="delete" type="submit" value="Delete" name="Delete"/>
+                                    <input id="discard" type="reset" value="Discard" onclick="closeQuickEdit(this)" /><br />
                                 </td>
                             </tr>
                         </form>';
@@ -153,7 +154,6 @@ class Projects_List extends WP_List_Table{
         global $wpdb;
         $sql = "SELECT * FROM {$wpdb->prefix}portfolio_projects";
         $records = $wpdb->get_results($sql);
-
 
         if ( ! empty( $_REQUEST['orderby'] ) ) {
             $sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
@@ -183,8 +183,7 @@ class Projects_List extends WP_List_Table{
         );
     }
 
-    public function process_bulk_action()
-    {
+    public function process_bulk_action(){
         // security check!
         if ( isset( $_POST['_wpnonce'] ) && ! empty( $_POST['_wpnonce'] ) ) {
 
@@ -197,11 +196,10 @@ class Projects_List extends WP_List_Table{
         }
 
         $action = $this->current_action();
-
         switch ( $action ) {
             case 'delete':
                 global $wpdb;
-                $table_name = $wpdb->prefix . 'portfolio_projects';
+                $table_name = $wpdb->prefix.'portfolio_projects';
 
                 if ('delete' === $this->current_action()) {
                     $ids = isset($_REQUEST['id'])? $_REQUEST['id'] : array();
@@ -210,7 +208,7 @@ class Projects_List extends WP_List_Table{
                         $ids = implode(',', $ids);
                     }
                     if (!empty($ids)) {
-                        $wpdb->query("DELETE FROM $table_name WHERE id IN($ids)");
+                        $wpdb->query("DELETE * FROM $table_name WHERE id IN($ids)");
                     }
                 }
                 break;
