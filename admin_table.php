@@ -28,14 +28,8 @@ class Projects_List extends WP_List_Table{
         return sprintf('<input type="checkbox" name="id[]" value="%s"/>', $item['id']);
     }
 
-    public function get_sortable_columns() {
-        return $sortable = array(
-            'id'=>'Id',
-            'image'=>'Image',
-            'name'=>'Name',
-            'url'=>'URL',
-            'description' => 'Description'
-        );
+    function row_actions($actions, $always_visible = true){
+        return parent::row_actions($actions, $always_visible);
     }
 
     //Getting the data from the db table
@@ -115,32 +109,32 @@ class Projects_List extends WP_List_Table{
                 return '<a class="test" onclick="toggleQuickEdit(this)" data-id-number='. $item['id'].'>Edit</a>
                         <form method="post">
                             <tr class="quick-edit" data-tr-number='. $item['id'].'>
-                            <td colspan="3" >
-                                <input type=\'file\' id="project-image-updated" name="project-image-updated" accept="image/png, , image/jpg" />
-                                <input type="hidden" name="action" value="update" />
-                                <input type="hidden" name="page_options" value="project-image-updated" />
-                                <p>Current: <i>'.$imageName.'</i></p>
-                            </td>
-                            <td><p>New name: 
-                                    <input required type="text" name="project-name-updated" size="20" value='.$oldName.'/>
+                                <td colspan="3" >
+                                    <input type=\'file\' id="project-image-updated" name="project-image-updated" accept="image/png, , image/jpg" />
                                     <input type="hidden" name="action" value="update" />
-                                    <input type="hidden" name="page_options" value="project-name-updated" />
-                                </p></td>
-                            <td><p>New url: 
-                                    <input type="url" name="project-url-updated" size="20" value='.$oldURL.'>
-                                    <input type="hidden" name="action" value="update" />
-                                    <input type="hidden" name="page_options" value="project-url-updated" />
-                                </p></td>
-                            <td><p>New description: 
-                                    <input type="text" name="project-description-updated" size="20" value='.$oldDescr.'/>
-                                    <input type="hidden" name="action" value="update" />
-                                    <input type="hidden" name="page_options" value="project-description-updated" />
-                                </p></td>
-                            <td>
-                                <input id="save" name="Save" type="submit" value="Save">
-                                <a href="#" id="discard" onclick="closeQuickEdit(this)">Discard</a>
-                                <a href="#" id="delete" onclick="loadDoc()">Delete</a>
-                            </td>
+                                    <input type="hidden" name="page_options" value="project-image-updated" />
+                                    <p>Current: <i>'.$imageName.'</i></p>
+                                </td>
+                                <td><p><p>New name: </p>
+                                        <input required type="text" name="project-name-updated" size="20" value="' . $oldName . '"/>
+                                        <input type="hidden" name="action" value="update" />
+                                        <input type="hidden" name="page_options" value="project-name-updated" />
+                                    </p></td>
+                                <td><p><p>New url: </p>
+                                        <input type="url" name="project-url-updated" size="20" value="'.$oldURL.'">
+                                        <input type="hidden" name="action" value="update" />
+                                        <input type="hidden" name="page_options" value="project-url-updated" />
+                                    </p></td>
+                                <td><p><p>New description: </p>
+                                        <textarea rows="4" cols="30" name="project-description-updated">'.$oldDescr.'</textarea>
+                                        <input type="hidden" name="action" value="update" />
+                                        <input type="hidden" name="page_options" value="project-description-updated" />
+                                    </p></td>
+                                <td class="testing">
+                                    <input id="save" name="Save" type="submit" value="Save" /><br />
+                                    <input id="discard" type="reset" value="Discard" onclick="closeQuickEdit(this)" />
+                                    <a href="plugin.php?delete=true" id="delete">Delete</a>
+                                </td>
                             </tr>
                         </form>';
                 break;
@@ -225,11 +219,5 @@ class Projects_List extends WP_List_Table{
                 break;
         }
         return;
-    }
-
-    function quick_edit($posts_columns)
-    {
-        $posts_columns['generatewp_edit_time'] = __('Edit Time', 'generatewp');
-        return $posts_columns;
     }
 }

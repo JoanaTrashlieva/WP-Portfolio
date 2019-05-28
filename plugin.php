@@ -6,30 +6,46 @@ Author: Joana Trashlieva
 Version: 0.1
 */
 
-add_action('admin_head', 'admin_register_head');
-add_action('admin_menu', 'portfolio_menu');
-register_activation_hook( __FILE__, 'portfolio_dbtable_install' );
-add_shortcode('projects', 'display_projects');
-add_filter( 'intermediate_image_sizes_advanced', 'remove_image_sizes', 10, 2 );
+add_action('admin_head', 'admin_register_head'); //admin menu
+add_action('admin_menu', 'portfolio_menu'); //calls function
+register_activation_hook( __FILE__, 'portfolio_dbtable_install' ); //runs on activating the plugin
+add_shortcode('projects', 'display_projects'); //shortcode for using the plugin
+add_filter( 'intermediate_image_sizes_advanced', 'remove_image_sizes', 10, 2 ); //stop wordpress from resizing images on upload
+add_action('wp_enqueue_scripts', 'frontend_scripts');
 
+
+
+//Link table file
 if(!class_exists('WP_List_Table')){
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
 $file = ABSPATH."wp-content/plugins/WP-Portfolio/admin_table.php";
 require($file);
 
+//Stops wordpress from resizing images on upload
 function remove_image_sizes( $sizes, $metadata ) {
     return [];
 }
 
-//CSS, JS
+//CSS, JS backend
 function admin_register_head() {
     $siteurl = get_option('siteurl');
     $url = $siteurl . '/wp-content/plugins/' . basename(dirname(__FILE__));
     $css = '/css/admin_table.css';
+    $css1= '/css/project-tiles.css';
     $js = '/js/quick_edit.js';
     echo "<script type='text/javascript' src='$url$js'></script>";
     echo "<link rel='stylesheet' type='text/css' href='$url$css'/>";
+    echo "<link rel='stylesheet' type='text/css' href='$url$css1'/>";
+}
+
+//CSS frontend
+function frontend_scripts() {
+    $siteurl = get_option('siteurl');
+    $url = $siteurl . '/wp-content/plugins/' . basename(dirname(__FILE__));
+    $css1= '/css/project-tiles.css';
+    wp_register_style( 'project-tiles', $url.$css1 );
+    wp_enqueue_style( 'project-tiles' );
 }
 
 //Db connection
@@ -54,7 +70,7 @@ function portfolio_dbtable_install() {
         description text NOT NULL,
         image varchar(50),
 	  	PRIMARY KEY  (id)
-	) $charset_collate;";
+	) $charset_collate";
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta( $sql );
@@ -91,7 +107,9 @@ function init_page(){
             <input type="hidden" name="page_options" value="project-url" />
 
             <p><strong>Short description:</strong><br />
-                <input type="text" name="project-description" size="90" placeholder="Say a few words about it"/>
+                <label>
+                    <textarea rows="4" cols="50" name="project-description" placeholder="Say a few words about it"></textarea>
+                </label>
             </p>
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="page_options" value="project-description" />
@@ -168,25 +186,33 @@ function imageUploadUpdated(){
 }
 
 //Display on frontend
-//function display_projects(){
-//    $now = new DateTime('now');
-//    $month = $now->format('m');
-//    $year = $now->format('Y');
-//
-//
-//    return '
-//        <div class="projects">
-//            <div class="block">
-//                <div class="thumbnail">
-//                    <img src="wp-content/uploads/'  . $year . '/' . $month . '/' . $imageName . '" />
-//                </div>
-//                <div class="name">'. $name .'</div>
-//                <div class="url">
-//                    <a href="'. get_option('project-url').'">'. $url .'</a>
-//                </div>
-//                <div class="description">'. $description .'</div>
-//            </div>
-//        </div>
-//    ';
-//}
+function display_projects(){
+    $now = new DateTime('now');
+    $month = $now->format('m');
+    $year = $now->format('Y');
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'portfolio_projects';
+    $projects = $wpdb->get_results( "SELECT * FROM $table_name");
+    ?>
+    <div class="projects"><?php
+    foreach ($projects as $project) {
+        echo '
+            <div class="project">
+                <div class="thumbnail">
+                    <img src="wp-content/uploads/'  . $year . '/' . $month . '/'. $project->image .'"/>
+                </div>
+                <div class="content">
+                    <div class="name">'. $project->name .'</div>
+                    <div class="url">
+                        <a href="'. get_option('project-url').'">'. $project->url .'</a>
+                    </div>
+                    <div class="description">'. $project->description .'</div>
+                </div>
+            </div>
+        ';
+        $project++;
+    }
+    ?></div><?php
+}
 

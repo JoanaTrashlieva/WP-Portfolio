@@ -20,19 +20,8 @@ th#edit.manage-column.column-edit {
     position: relative;
 }
 
-#save:after {
-    content: '|';
-    padding-left: 5px;
-}
-
 #discard{
     color: grey;
-}
-
-#discard:after {
-    content: '|';
-    color: #0073aa;
-    padding-left: 5px;
 }
 
 #delete{
