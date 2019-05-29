@@ -23,11 +23,11 @@ Add html/css from the admin section
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. In your sidebar, select 'JT Portfolio' to get started
 
-#Admin View
+# Admin View
 
 ![Admin View](/images/admin-view.png)
 
-#Frontend
+# Frontend
 
 ![Front View](/images/frontend.png)
 
