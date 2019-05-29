@@ -5,7 +5,7 @@ Plugin on Wordpress - creating a portfolio with projects in the admin section an
 
 Contributors: joanatrashlieva
 
-Tags: porfolio, wordpress, fontend, home page, style, projects
+Tags: portfolio, wordpress, frontend, home page, style, projects
 
 Author URI: http://trashlieva.com/
 
@@ -28,7 +28,7 @@ Add html/css from the admin section
 
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
-3. In your sidebar, select 'JT Portfolio' to get started
+3. In your sidebar, select 'Portfolio' to get started
 
 # Admin View
 
