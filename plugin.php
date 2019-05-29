@@ -84,7 +84,7 @@ function portfolio_menu() {
     $capability = 'manage_options';
     $menu_slug = 'jt-portfolio-plugin';
     $function = 'init_page';
-    $icon_url = $url.'/open-book.png';
+    $icon_url = $url.'/images/open-book.png';
     $position = 100;
     add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
 }
