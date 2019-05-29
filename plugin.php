@@ -76,12 +76,15 @@ function portfolio_dbtable_install() {
 
 //Admin menu
 function portfolio_menu() {
+    $siteurl = get_option('siteurl');
+    $url = $siteurl . '/wp-content/plugins/' . basename(dirname(__FILE__));
+
     $page_title = 'JT Portfolio Plugin Page';
     $menu_title = 'Portfolio';
     $capability = 'manage_options';
     $menu_slug = 'jt-portfolio-plugin';
     $function = 'init_page';
-    $icon_url = '';
+    $icon_url = $url.'/open-book.png';
     $position = 100;
     add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
 }

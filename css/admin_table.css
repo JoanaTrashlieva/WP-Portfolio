@@ -22,3 +22,7 @@ th#edit.manage-column.column-edit {
 #delete{
     color: red;
 }
+
+.toplevel_page_jt-portfolio-plugin img{
+    width: 20px;
+}
