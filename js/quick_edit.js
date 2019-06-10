@@ -10,3 +10,4 @@ function closeQuickEdit(elem){
     var row = elem.parentElement;
     row.parentElement.classList.toggle("quick-edit");
 }
+

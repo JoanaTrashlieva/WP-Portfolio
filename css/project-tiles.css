@@ -1,4 +1,4 @@
-.projects{
+.projects {
     position: relative;
     width: 100%;
     padding: 0;
@@ -17,45 +17,93 @@
     width: 50%;
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-evenly;
-    height: 250px;
+    height: 200px;
 }
 
 .projects .project:nth-child(4n+3), .project:nth-child(4n+4){
     flex-direction: row-reverse;
 }
 
-.project .thumbnail, .content{
-    width: 50%;
+.project .thumbnail, .content {
+    width: 100%;
     position: relative;
-    height: 100%;
 }
 
-.projects .project:after{
-    content: ' ';
-    width: 50px;
-    height: 50px;
-    border-radius: 50px;
-    background: grey;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.project .content{
+#project .content{
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-evenly;
     text-align: center;
     padding: 10px;
+    width: 50%;
+    box-sizing: border-box;
+}
+
+.project .content .name{
+    font-size: 20px;
+}
+
+.project .content .url {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.project .content .url a {
+    font-size: 16px;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+.project .content .description {
+    font-size: 18px;
+}
+
+.project .thumbnail{
+    overflow: hidden;
+    width: 50%;
 }
 
 .project .thumbnail img{
     position: absolute;
     height: 100%;
-    object-fit: cover;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    top: 50%;
+}
+
+@media only screen and (max-width: 600px) {
+    .projects {
+        flex-direction: column;
+    }
+
+    .projects .project{
+        width: 100%;
+        flex-direction: column;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .project .thumbnail{
+        width: 100%;
+    }
+
+    .project .thumbnail img{
+        position: relative;
+        height: auto;
+        width: 100%;
+    }
+
+    #project .content{
+        padding: 0;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .projects .project:nth-child(4n+3){
+        flex-direction: column;
+    }
 }
 

@@ -17,7 +17,7 @@ add_action('wp_enqueue_scripts', 'frontend_scripts');
 if(!class_exists('WP_List_Table')){
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
-$file = ABSPATH."wp-content/plugins/WP-Portfolio/admin_table.php";
+$file = ABSPATH."wp-content/plugins/projects-portfolio/admin_table.php";
 require($file);
 
 //Stops wordpress from resizing images on upload
@@ -62,11 +62,12 @@ function portfolio_dbtable_install() {
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE $table_name (
-	  	id mediumint(9) NOT NULL AUTO_INCREMENT,
-	  	name tinytext NOT NULL,
-	  	url varchar(55) DEFAULT '' NOT NULL,
-        description text NOT NULL,
-        image varchar(50),
+	  	id int(3) NOT NULL AUTO_INCREMENT,
+	  	active int(1) DEFAULT '1' NOT NULL,
+	  	name varchar(50) NOT NULL,
+	  	url varchar(2083) DEFAULT '' NOT NULL,
+        description text DEFAULT '' NOT NULL,
+        image text,
 	  	PRIMARY KEY  (id)
 	) $charset_collate";
 
@@ -80,7 +81,7 @@ function portfolio_menu() {
     $url = $siteurl . '/wp-content/plugins/' . basename(dirname(__FILE__));
 
     $page_title = 'JT Portfolio Plugin Page';
-    $menu_title = 'Portfolio';
+    $menu_title = 'Projects Portfolio';
     $capability = 'manage_options';
     $menu_slug = 'jt-portfolio-plugin';
     $function = 'init_page';
@@ -96,13 +97,13 @@ function init_page(){
         <h2>Create new project</h2>
         <form method="post" <?php echo esc_url( admin_url( 'admin-post.php' ) ); ?> enctype="multipart/form-data">
             <p><strong>Name:</strong><br />
-                <input required type="text" name="project-name" size="45" placeholder="Please enter the name of your project"/>
+                <input required type="text" name="project-name" size="45" maxlength="50" placeholder="Please enter the name of your project"/>
             </p>
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="page_options" value="project-name" />
 
             <p><strong>Address:</strong><br />
-                <input type="url" name="project-url" size="45" placeholder=http://example.com/>
+                <input type="url" name="project-url" size="45" maxlength="2083" placeholder=http://example.com/>
             </p>
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="page_options" value="project-url" />
@@ -155,11 +156,11 @@ function portfolio_dbtable_populate($name, $url, $description, $imageName){
 }
 
 //Send updates to db table
-function portfolio_dbtable_populate_updated($id, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item){
+function portfolio_dbtable_populate_updated($id, $statusUpdated, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item){
     global $wpdb;
     $table_name = $wpdb->prefix . 'portfolio_projects';
     $wpdb->update($table_name,
-        array('id' => $id,'name' => $nameUpdated, 'url' => $urlUpdated, 'description' => $descriptionUpdated, 'image' => $imageNameUpdated),
+        array('id' => $id,'active'=> $statusUpdated, 'name' => $nameUpdated, 'url' => $urlUpdated, 'description' => $descriptionUpdated, 'image' => $imageNameUpdated),
         array('id'=> $id));
 }
 
@@ -196,25 +197,29 @@ function display_projects(){
     global $wpdb;
     $table_name = $wpdb->prefix . 'portfolio_projects';
     $projects = $wpdb->get_results( "SELECT * FROM $table_name");
-    ?>
-    <div class="projects"><?php
+    $html = '';
+    $html .= '<div class="projects">';
     foreach ($projects as $project) {
-        echo '
-            <div class="project">
+        if($project->active) {
+            $html .= '
+            <div class="project" id="project">
                 <div class="thumbnail">
-                    <img src="wp-content/uploads/'  . $year . '/' . $month . '/'. $project->image .'"/>
+                    <img src="wp-content/uploads/' . $year . '/' . $month . '/' . $project->image . '"/>
                 </div>
                 <div class="content">
-                    <div class="name">'. $project->name .'</div>
+                    <div class="name">' . $project->name . '</div>
                     <div class="url">
-                        <a href="'. get_option('project-url').'">'. $project->url .'</a>
+                        <a href="' . get_option('project-url') . '">' . $project->url . '</a>
                     </div>
-                    <div class="description">'. $project->description .'</div>
+                    <div class="description">' . $project->description . '</div>
                 </div>
             </div>
         ';
-        $project++;
+        }
     }
-    ?></div><?php
+
+    $html .= '</div>';
+
+    return $html;
 }
 
