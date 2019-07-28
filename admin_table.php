@@ -98,16 +98,7 @@ class Projects_List extends WP_List_Table{
                     $imageName = "No Image";
                 }
 
-                if (isset($_POST['Save'])) {
-                    $id = $_POST['quickAction'];
-                    $statusUpdated = $_POST["project-status"];
-                    $nameUpdated = $_POST["project-name"];
-                    $urlUpdated = $_POST["project-url"];
-                    $descriptionUpdated = $_POST["project-description"];
-                    $imageNameUpdated = $_POST["project-image"];
-                    imageUploadUpdated();
-                    portfolio_dbtable_populate_updated($id, $statusUpdated, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item);
-                }
+
 
                 if (isset($_POST['Delete'])) {
                     $id = $_POST['quickAction'];
@@ -119,8 +110,21 @@ class Projects_List extends WP_List_Table{
                     echo "<meta http-equiv='refresh' content='0'>";
                 }
 
+                if (isset($_POST['Save'])) {
+                    $id = $_POST['quickAction'];
+                    $statusUpdated = $_POST["project-status"];
+                    $nameUpdated = $_POST["project-name"];
+                    $urlUpdated = $_POST["project-url"];
+                    $descriptionUpdated = $_POST["project-description"];
+                    $imageNameUpdated = $_FILES["project-image"]["name"];
+
+                    imageUploadUpdated();
+                    portfolio_dbtable_populate_updated($id, $statusUpdated, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated);
+
+                }
+
                 return '<a class="test" onclick="toggleQuickEdit(this)" data-id-number='. $item['id'].'>Edit</a>
-                        <form method="post">
+                        <form method="post" enctype="multipart/form-data">
                             <input type="hidden" value="'.$item['id'].'" name="quickAction" />
                             <tr class="quick-edit" data-tr-number='. $item['id'].'>
                                 <td></td>
@@ -135,7 +139,7 @@ class Projects_List extends WP_List_Table{
                                     </p>
                                 </td>
                                 <td>
-                                    <input type=\'file\' id="project-image-updated" name="project-image" accept="image/png, , image/jpg" />
+                                    <input type="file" name="project-image" accept="image/png, , image/jpg">
                                     <p>Current: <i>'.$imageName.'</i></p>
                                 </td>
                                 <td><p><p>New name: </p>

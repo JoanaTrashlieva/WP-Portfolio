@@ -126,6 +126,7 @@ function init_page(){
         </form>
     </div>
     <?php
+
     if (isset($_POST['Submit'])) {
         $name = $_POST["project-name"];
         $url = $_POST["project-url"];
@@ -156,7 +157,7 @@ function portfolio_dbtable_populate($name, $url, $description, $imageName){
 }
 
 //Send updates to db table
-function portfolio_dbtable_populate_updated($id, $statusUpdated, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated, $item){
+function portfolio_dbtable_populate_updated($id, $statusUpdated, $nameUpdated, $urlUpdated, $descriptionUpdated, $imageNameUpdated){
     global $wpdb;
     $table_name = $wpdb->prefix . 'portfolio_projects';
     $wpdb->update($table_name,
@@ -177,8 +178,8 @@ function imageUpload(){
 }
 
 function imageUploadUpdated(){
-    if(isset($_FILES['project-image-updated'])){
-        $uploaded = media_handle_upload('project-image-updated', 0);
+    if(isset($_FILES['project-image'])){
+        $uploaded = media_handle_upload('project-image', 0);
 
         if(is_wp_error($uploaded)){
             echo "Error uploading image: " . $uploaded->get_error_message();
